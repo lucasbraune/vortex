@@ -3,12 +3,29 @@
  */
 package vortex
 
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.Assertions.assertEquals
 import kotlin.test.Test
-import kotlin.test.assertNotNull
 
 class AppTest {
-    @Test fun appHasAGreeting() {
-        val classUnderTest = App()
-        assertNotNull(classUnderTest.greeting, "app should have a greeting")
+   @Test
+    fun `deserializes echo`() {
+        val json = """
+            {
+              "src": "c1",
+              "dest": "n1",
+              "body": {
+                "type": "echo",
+                "msg_id": 1,
+                "echo": "Please echo 35"
+              }
+            }
+        """.trimIndent()
+
+        val message = Json.decodeFromString<Message>(json)
+
+        val expected = Message("c1", "n1", Echo("Please echo 35", messageId = 1))
+        assertEquals(expected, message)
     }
 }

@@ -21,7 +21,7 @@ data class Message(
 @Serializable
 sealed interface MessageBody {
     val messageId: Int?
-    val inReplyTo: String?
+    val inReplyTo: Int?
 }
 
 @Serializable
@@ -34,7 +34,16 @@ data class Init(
     @SerialName("msg_id")
     override val messageId: Int? = null,
     @SerialName("in_reply_to")
-    override val inReplyTo: String? = null,
+    override val inReplyTo: Int? = null,
+): MessageBody
+
+@Serializable
+@SerialName("init_ok")
+data class InitOk(
+    @SerialName("msg_id")
+    override val messageId: Int? = null,
+    @SerialName("in_reply_to")
+    override val inReplyTo: Int? = null,
 ): MessageBody
 
 @Serializable
@@ -44,7 +53,7 @@ data class Echo(
     @SerialName("msg_id")
     override val messageId: Int? = null,
     @SerialName("in_reply_to")
-    override val inReplyTo: String? = null,
+    override val inReplyTo: Int? = null,
 ): MessageBody
 
 fun main() {

@@ -56,6 +56,16 @@ data class Echo(
     override val inReplyTo: Int? = null,
 ): MessageBody
 
+@Serializable
+@SerialName("echo_ok")
+data class EchoOk(
+    val echo: String,
+    @SerialName("msg_id")
+    override val messageId: Int? = null,
+    @SerialName("in_reply_to")
+    override val inReplyTo: Int? = null,
+): MessageBody
+
 fun main() {
     while (true) {
         val line = readLine() ?: return

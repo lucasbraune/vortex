@@ -4,8 +4,8 @@
 package vortex
 
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import kotlin.test.Test
 
@@ -59,15 +59,43 @@ class AppTest {
     fun `serializes init_ok body`() {
         val body = InitOk(inReplyTo = 1)
 
-        val json = Json.encodeToJsonElement<MessageBody>(body)
+        val json = Json.encodeToString<MessageBody>(body)
 
-        val expectedAsString = """
+        val expected = """
             {
               "type": "init_ok",
               "in_reply_to": 1
             }
         """.trimIndent()
-        val expected = Json.parseToJsonElement(expectedAsString)
-        assertEquals(expected, json)
+        assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(json))
+    }
+
+    @Test
+    fun `serializes echo_ok message`() {
+        val message = Message(
+            source = "n1",
+            destination = "c1",
+            body = EchoOk(
+                messageId = 1,
+                inReplyTo = 1,
+                echo = "Please echo 35",
+            )
+        )
+
+        val json = Json.encodeToString(message)
+
+        val expected = """
+            {
+              "src": "n1",
+              "dest": "c1",
+              "body": {
+                "type": "echo_ok",
+                "msg_id": 1,
+                "in_reply_to": 1,
+                "echo": "Please echo 35"
+              }
+            }
+        """.trimIndent()
+        assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(json))
     }
 }

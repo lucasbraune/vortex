@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package vortex
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -67,9 +64,30 @@ data class EchoOk(
 ): MessageBody
 
 fun main() {
+    val json = Json { ignoreUnknownKeys = true }
+    var nextMessageId = 1
     while (true) {
-        val line = readLine() ?: return
-        val message: Message = Json.decodeFromString(line)
-        println(Json.encodeToString(message))
+        val line = readLine() ?: return // End of input
+        val request: Message = json.decodeFromString(line)
+
+        val responseBody = when (request.body) {
+            is Init -> InitOk(
+                messageId = nextMessageId++,
+                inReplyTo = request.body.messageId,
+            )
+            is Echo -> EchoOk(
+                echo = request.body.echo,
+                messageId = nextMessageId++,
+                inReplyTo = request.body.messageId,
+            )
+            else -> throw Exception("Unexpected message body: ${request.body}")
+        }
+        val response = Message(
+            source = request.destination,
+            destination = request.source,
+            body = responseBody
+        )
+
+        println(json.encodeToString(response))
     }
 }

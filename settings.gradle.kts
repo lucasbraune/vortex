@@ -8,4 +8,5 @@
  */
 
 rootProject.name = "vortex"
-include("app")
+include("echo")
+include("maelstrom")

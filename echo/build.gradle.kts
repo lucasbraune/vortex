@@ -15,6 +15,11 @@ plugins {
     application
 }
 
+val maelstromRuntime: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
@@ -25,6 +30,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+
+    maelstromRuntime(project(mapOf("path" to ":maelstrom", "configuration" to "maelstromBin")))
 }
 
 application {
@@ -35,4 +42,13 @@ application {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+tasks.register<Exec>("runMaelstrom") {
+    dependsOn(maelstromRuntime.buildDependencies)
+    dependsOn("installDist")
+    val maelstromBin = maelstromRuntime.singleFile.path
+    val nodeBin = "$buildDir/install/${project.name}/bin/${project.name}"
+    val cmd = "$maelstromBin test -w echo --bin $nodeBin --node-count 1 --time-limit 10"
+    commandLine("bash", "-c", cmd)
 }

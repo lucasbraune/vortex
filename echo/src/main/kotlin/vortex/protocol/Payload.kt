@@ -4,12 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.*
 
-data class MessageBody(
-    val messageId: Int?,
-    val inReplyTo: Int?,
-    val payload: MessagePayload,
-)
-
 interface MessagePayload
 
 @Serializable

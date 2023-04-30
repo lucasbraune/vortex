@@ -41,13 +41,20 @@ abstract class Node(serialModule: SerializersModule) {
         while (true) {
             val line = readLine() ?: return // End of input
             val message = format.decodeFromString<Message>(line)
-            val body = messageBodyFromFlatJson(message.body, format)
+            val messageId = message.body[MESSAGE_ID]?.toIntOrThrow()
+            val inReplyTo = message.body[IN_REPLY_TO]?.toIntOrThrow()
+            val payload = format.decodeFromJsonElement<MessagePayload>(message.body)
 
-            handleMessage(message.source, body)
+            handleMessage(message.source, messageId, inReplyTo, payload)
         }
     }
 
-    protected abstract fun handleMessage(source: String, body: MessageBody)
+    protected abstract fun handleMessage(
+        source: String,
+        messageId: Int?,
+        inReplyTo: Int?,
+        payload: MessagePayload,
+    )
 
     /**
      * Sends a message and returns its ID. Throws if [nodeId] has not yet been set.
@@ -58,8 +65,10 @@ abstract class Node(serialModule: SerializersModule) {
         inReplyTo: Int? = null,
     ): Int {
         val messageId = nextMessageId++
-        val body = MessageBody(messageId, inReplyTo, payload)
-        val message = Message(source = nodeId, destination = destination, body.toFlatJson(format))
+        val payloadJson = format.encodeToJsonElement(payload) as JsonObject
+        val body = payloadJson.withReservedFields(messageId = messageId, inReplyTo = inReplyTo)
+        val message = Message(source = nodeId, destination = destination, body)
+
         println(format.encodeToString(message))
         return messageId
     }
@@ -68,28 +77,7 @@ abstract class Node(serialModule: SerializersModule) {
         private const val IN_REPLY_TO = "in_reply_to"
         private const val MESSAGE_ID = "msg_id"
 
-        fun MessageBody.toFlatJson(format: Json = Json.Default): JsonObject {
-            val obj = format.encodeToJsonElement(payload) as JsonObject
-            return obj.setReservedFields(messageId, inReplyTo)
-        }
-
-        fun messageBodyFromFlatJson(
-            flatJson: JsonObject,
-            format: Json = Json.Default
-        ) = MessageBody(
-            messageId = flatJson[MESSAGE_ID]?.toIntOrThrow(),
-            inReplyTo = flatJson[IN_REPLY_TO]?.toIntOrThrow(),
-            payload = format.decodeFromJsonElement(flatJson.unsetReservedFields()),
-        )
-
-        private fun JsonObject.unsetReservedFields(): JsonObject {
-            val map = toMutableMap()
-            map.remove(IN_REPLY_TO)
-            map.remove(MESSAGE_ID)
-            return JsonObject(map)
-        }
-
-        private fun JsonObject.setReservedFields(
+        private fun JsonObject.withReservedFields(
             messageId: Int?,
             inReplyTo: Int?,
         ): JsonObject {

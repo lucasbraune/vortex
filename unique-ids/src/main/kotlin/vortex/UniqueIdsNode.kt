@@ -18,14 +18,16 @@ object Generate: MessagePayload
 @SerialName("generate_ok")
 data class GenerateOk(val id: Int): MessagePayload
 
-val echoSerialModule = SerializersModule {
+val uniqueIdsSerialModule = SerializersModule {
     polymorphic(MessagePayload::class) {
         subclass(Generate::class)
         subclass(GenerateOk::class)
     }
 }
 
-class UniqueIdsNode : Node(echoSerialModule) {
+class UniqueIdsNode : Node(uniqueIdsSerialModule) {
+    private var generatedCount = 0
+
     override fun handleMessage(
         source: String,
         messageId: Int?,
@@ -45,11 +47,13 @@ class UniqueIdsNode : Node(echoSerialModule) {
             is Generate -> {
                 sendMessage(
                     destination = source,
-                    payload = GenerateOk(id = 42), // TODO
+                    payload = GenerateOk(id = generateId()),
                     inReplyTo = messageId,
                 )
             }
             else -> throw Exception("Unexpected message payload: $payload")
         }
     }
+
+    private fun generateId(): Int = (generatedCount++) * nodeIds.count() + nodeIds.indexOf(nodeId)
 }

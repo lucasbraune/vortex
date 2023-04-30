@@ -2,6 +2,7 @@ package vortex.protocol
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.*
 
 data class MessageBody(
     val messageId: Int?,
@@ -9,8 +10,7 @@ data class MessageBody(
     val payload: MessagePayload,
 )
 
-@Serializable
-sealed interface MessagePayload
+interface MessagePayload
 
 @Serializable
 @SerialName("init")
@@ -25,10 +25,9 @@ data class Init(
 @SerialName("init_ok")
 object InitOk: MessagePayload
 
-@Serializable
-@SerialName("echo")
-data class Echo(val echo: String): MessagePayload
-
-@Serializable
-@SerialName("echo_ok")
-data class EchoOk(val echo: String): MessagePayload
+val protocolSerialModule: SerializersModule = SerializersModule {
+    polymorphic(MessagePayload::class) {
+        subclass(Init::class)
+        subclass(InitOk::class)
+    }
+}

@@ -1,17 +1,32 @@
 package vortex
 
-import vortex.protocol.Echo
-import vortex.protocol.EchoOk
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import vortex.protocol.Init
 import vortex.protocol.InitOk
 import vortex.protocol.MessageBody
+import vortex.protocol.MessagePayload
 import vortex.protocol.Node
 
-fun main() {
-    EchoNode().serve()
+@Serializable
+@SerialName("echo")
+data class Echo(val echo: String): MessagePayload
+
+@Serializable
+@SerialName("echo_ok")
+data class EchoOk(val echo: String): MessagePayload
+
+val echoSerialModule = SerializersModule {
+    polymorphic(MessagePayload::class) {
+        subclass(Echo::class)
+        subclass(EchoOk::class)
+    }
 }
 
-class EchoNode: Node() {
+class EchoNode : Node(echoSerialModule) {
     override fun handleMessage(source: String, body: MessageBody) {
         when (body.payload) {
             is Init -> {
@@ -31,4 +46,8 @@ class EchoNode: Node() {
             else -> throw Exception("Unexpected message payload: ${body.payload}")
         }
     }
+}
+
+fun main() {
+    EchoNode().serve()
 }

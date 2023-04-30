@@ -10,8 +10,13 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.modules.*
 
-abstract class Node {
+/**
+ * @param serialModule Module where subclasses of [MessagePayload] are
+ * registered for serialization; used in addition to [protocolSerialModule]
+ */
+abstract class Node(serialModule: SerializersModule) {
     @Serializable
     private data class Message(
         @SerialName("src")
@@ -21,10 +26,16 @@ abstract class Node {
         val body: JsonObject,
     )
 
-    private val format = Json { ignoreUnknownKeys = true }
     private var nextMessageId: Int = 0
+
     protected lateinit var nodeId: String
+
     protected lateinit var nodeIds: List<String>
+
+    private val format = Json {
+        ignoreUnknownKeys = true
+        this.serializersModule = serialModule + protocolSerialModule
+    }
 
     fun serve() {
         while (true) {

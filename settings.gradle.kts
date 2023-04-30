@@ -8,7 +8,8 @@
  */
 
 rootProject.name = "vortex"
-include("echo")
 include("maelstrom")
 include("protocol")
+include("echo")
 include("unique-ids")
+include("broadcast")

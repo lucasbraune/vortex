@@ -30,6 +30,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+    implementation(project(":protocol"))
 
     maelstromRuntime(project(mapOf("path" to ":maelstrom", "configuration" to "maelstromBin")))
 }

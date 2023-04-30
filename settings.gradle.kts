@@ -11,3 +11,4 @@ rootProject.name = "vortex"
 include("echo")
 include("maelstrom")
 include("protocol")
+include("unique-ids")

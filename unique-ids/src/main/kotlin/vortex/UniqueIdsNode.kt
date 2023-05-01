@@ -32,7 +32,7 @@ class UniqueIdsNode : Node(uniqueIdsSerialModule) {
             val messageId = message.messageId
             when (message.payload) {
                 is Generate -> {
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = GenerateOk(id = generateId()),
                         inReplyTo = messageId,

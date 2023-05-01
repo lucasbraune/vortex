@@ -30,7 +30,7 @@ class EchoNode : Node(echoSerialModule) {
             val messageId = message.messageId
             when (val payload = message.payload) {
                 is Echo -> {
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = EchoOk(payload.echo),
                         inReplyTo = messageId,

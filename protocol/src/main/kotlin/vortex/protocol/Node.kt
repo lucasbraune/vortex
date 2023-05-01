@@ -77,7 +77,7 @@ abstract class Node(serialModule: SerializersModule) {
                 is Init -> {
                     this.nodeId = payload.nodeId
                     this.nodeIds = payload.nodeIds
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = InitOk,
                         inReplyTo = messageId,
@@ -108,7 +108,7 @@ abstract class Node(serialModule: SerializersModule) {
     /**
      * Sends a message and returns its ID. Throws if [nodeId] has not yet been set.
      */
-    protected fun sendMessage(
+    protected fun send(
         destination: String,
         payload: MessagePayload,
         inReplyTo: Int? = null,
@@ -127,7 +127,7 @@ abstract class Node(serialModule: SerializersModule) {
         request: MessagePayload,
         handler: (response: MessagePayload) -> Unit
     ) {
-        val messageId = sendMessage(destination, request)
+        val messageId = send(destination, request)
         responseHandler.register(destination, messageId, handler)
     }
 

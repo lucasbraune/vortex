@@ -54,21 +54,21 @@ class BroadcastNode : Node(broadcastSerialModule) {
             when (val payload = message.payload) {
                 is Broadcast -> {
                     messages.add(payload.message)
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = BroadcastOk,
                         inReplyTo = messageId,
                     )
                 }
                 is Read -> {
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = ReadOk(messages = messages),
                         inReplyTo = messageId,
                     )
                 }
                 is Topology -> {
-                    sendMessage(
+                    send(
                         destination = source,
                         payload = TopologyOk,
                         inReplyTo = messageId,

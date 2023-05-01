@@ -33,6 +33,26 @@ abstract class Node(serialModule: SerializersModule) {
         val payload: MessagePayload,
     )
 
+    private class ResponseHandler {
+        private val handlers: MutableMap<Pair<String, Int>, (MessagePayload) -> Unit> =
+            mutableMapOf()
+
+        fun register(
+            requestDestination: String,
+            requestMessageId: Int,
+            handle: (message: MessagePayload) -> Unit,
+        ) {
+            handlers[Pair(requestDestination, requestMessageId)] = handle
+        }
+
+        fun handle(response: Message) {
+            if (response.inReplyTo != null) {
+                handlers.remove(Pair(response.source, response.inReplyTo))
+                    ?.invoke((response.payload))
+            }
+        }
+    }
+
     private var nextMessageId: Int = 0
 
     protected lateinit var nodeId: String
@@ -47,6 +67,8 @@ abstract class Node(serialModule: SerializersModule) {
     private val handlers: MutableList<(message: Message) -> Unit> =
         mutableListOf()
 
+    private val responseHandler: ResponseHandler = ResponseHandler()
+
     init {
         registerHandler { message ->
             val source = message.source
@@ -56,13 +78,14 @@ abstract class Node(serialModule: SerializersModule) {
                     this.nodeId = payload.nodeId
                     this.nodeIds = payload.nodeIds
                     sendMessage(
-                        destination = message.source,
+                        destination = source,
                         payload = InitOk,
-                        inReplyTo = message.messageId,
+                        inReplyTo = messageId,
                     )
                 }
             }
         }
+        registerHandler(responseHandler::handle)
     }
 
     fun serve() {
@@ -97,6 +120,15 @@ abstract class Node(serialModule: SerializersModule) {
 
         println(format.encodeToString(message))
         return messageId
+    }
+
+    protected fun rpc(
+        destination: String,
+        request: MessagePayload,
+        handler: (response: MessagePayload) -> Unit
+    ) {
+        val messageId = sendMessage(destination, request)
+        responseHandler.register(destination, messageId, handler)
     }
 
     private companion object {

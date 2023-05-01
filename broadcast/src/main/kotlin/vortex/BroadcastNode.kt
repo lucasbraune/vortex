@@ -47,6 +47,8 @@ val broadcastSerialModule = SerializersModule {
 
 class BroadcastNode : Node(broadcastSerialModule) {
 
+    private val messages = mutableListOf<Int>()
+
     override fun handleMessage(
         source: String,
         messageId: Int?,
@@ -60,6 +62,28 @@ class BroadcastNode : Node(broadcastSerialModule) {
                 sendMessage(
                     destination = source,
                     payload = InitOk,
+                    inReplyTo = messageId,
+                )
+            }
+            is Broadcast -> {
+                messages.add(payload.message)
+                sendMessage(
+                    destination = source,
+                    payload = BroadcastOk,
+                    inReplyTo = messageId,
+                )
+            }
+            is Read -> {
+                sendMessage(
+                    destination = source,
+                    payload = ReadOk(messages = messages),
+                    inReplyTo = messageId,
+                )
+            }
+            is Topology -> {
+                sendMessage(
+                    destination = source,
+                    payload = TopologyOk,
                     inReplyTo = messageId,
                 )
             }

@@ -18,12 +18,19 @@ import kotlinx.serialization.modules.*
  */
 abstract class Node(serialModule: SerializersModule) {
     @Serializable
-    private data class Message(
+    private data class WireMessage(
         @SerialName("src")
         val source: String,
         @SerialName("dest")
         val destination: String,
         val body: JsonObject,
+    )
+
+    data class Message(
+        val source: String,
+        val messageId: Int?,
+        val inReplyTo: Int?,
+        val payload: MessagePayload,
     )
 
     private var nextMessageId: Int = 0
@@ -37,24 +44,25 @@ abstract class Node(serialModule: SerializersModule) {
         this.serializersModule = serialModule + protocolSerialModule
     }
 
+    private val handlers: MutableList<(message: Message) -> Unit> =
+        mutableListOf()
+
     fun serve() {
         while (true) {
             val line = readLine() ?: return // End of input
-            val message = format.decodeFromString<Message>(line)
-            val messageId = message.body[MESSAGE_ID]?.toIntOrThrow()
-            val inReplyTo = message.body[IN_REPLY_TO]?.toIntOrThrow()
-            val payload = format.decodeFromJsonElement<MessagePayload>(message.body)
+            val wireMessage = format.decodeFromString<WireMessage>(line)
+            val messageId = wireMessage.body[MESSAGE_ID]?.toIntOrThrow()
+            val inReplyTo = wireMessage.body[IN_REPLY_TO]?.toIntOrThrow()
+            val payload = format.decodeFromJsonElement<MessagePayload>(wireMessage.body)
+            val message = Message(wireMessage.source, messageId, inReplyTo, payload)
 
-            handleMessage(message.source, messageId, inReplyTo, payload)
+            handlers.forEach { it(message) }
         }
     }
 
-    protected abstract fun handleMessage(
-        source: String,
-        messageId: Int?,
-        inReplyTo: Int?,
-        payload: MessagePayload,
-    )
+    protected fun registerHandler(handler: (message: Message) -> Unit) {
+        handlers.add(handler)
+    }
 
     /**
      * Sends a message and returns its ID. Throws if [nodeId] has not yet been set.
@@ -67,7 +75,7 @@ abstract class Node(serialModule: SerializersModule) {
         val messageId = nextMessageId++
         val payloadJson = format.encodeToJsonElement(payload) as JsonObject
         val body = payloadJson.withReservedFields(messageId = messageId, inReplyTo = inReplyTo)
-        val message = Message(source = nodeId, destination = destination, body)
+        val message = WireMessage(source = nodeId, destination = destination, body)
 
         println(format.encodeToString(message))
         return messageId

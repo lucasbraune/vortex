@@ -28,32 +28,32 @@ val uniqueIdsSerialModule = SerializersModule {
 class UniqueIdsNode : Node(uniqueIdsSerialModule) {
     private var generatedCount = 0
 
-    override fun handleMessage(
-        source: String,
-        messageId: Int?,
-        inReplyTo: Int?,
-        payload: MessagePayload,
-    ) {
-        when (payload) {
-            is Init -> {
-                nodeId = payload.nodeId
-                nodeIds = payload.nodeIds
-                sendMessage(
-                    destination = source,
-                    payload = InitOk,
-                    inReplyTo = messageId,
-                )
+    init {
+        registerHandler { message ->
+            val source = message.source
+            val messageId = message.messageId
+
+            when (val payload = message.payload) {
+                is Init -> {
+                    nodeId = payload.nodeId
+                    nodeIds = payload.nodeIds
+                    sendMessage(
+                        destination = source,
+                        payload = InitOk,
+                        inReplyTo = messageId,
+                    )
+                }
+                is Generate -> {
+                    sendMessage(
+                        destination = source,
+                        payload = GenerateOk(id = generateId()),
+                        inReplyTo = messageId,
+                    )
+                }
             }
-            is Generate -> {
-                sendMessage(
-                    destination = source,
-                    payload = GenerateOk(id = generateId()),
-                    inReplyTo = messageId,
-                )
-            }
-            else -> throw Exception("Unexpected message payload: $payload")
         }
     }
 
-    private fun generateId(): Int = (generatedCount++) * nodeIds.count() + nodeIds.indexOf(nodeId)
+    private fun generateId(): Int =
+        (generatedCount++) * nodeIds.count() + nodeIds.indexOf(nodeId)
 }

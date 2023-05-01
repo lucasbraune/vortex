@@ -26,7 +26,7 @@ abstract class Node(serialModule: SerializersModule) {
         val body: JsonObject,
     )
 
-    data class Message(
+    protected data class Message(
         val source: String,
         val messageId: Int?,
         val inReplyTo: Int?,
@@ -109,8 +109,8 @@ abstract class Node(serialModule: SerializersModule) {
      * Sends a message and returns its ID. Throws if [nodeId] has not yet been set.
      */
     protected fun send(
-        destination: String,
         payload: MessagePayload,
+        destination: String,
         inReplyTo: Int? = null,
     ): Int {
         val messageId = nextMessageId++
@@ -127,7 +127,7 @@ abstract class Node(serialModule: SerializersModule) {
         request: MessagePayload,
         handler: (response: MessagePayload) -> Unit
     ) {
-        val messageId = send(destination, request)
+        val messageId = send(request, destination)
         responseHandler.register(destination, messageId, handler)
     }
 

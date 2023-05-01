@@ -50,9 +50,6 @@ tasks.register<Exec>("runMaelstrom") {
     dependsOn("installDist")
     val maelstromBin = maelstromRuntime.singleFile.path
     val nodeBin = "$buildDir/install/${project.name}/bin/${project.name}"
-    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 1 --time-limit 20 --rate 10"
-//    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 5 --time-limit 20 --rate 10"
-//    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 5 --time-limit 20 --rate 10 --nemesis partition"
-//    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 25 --time-limit 20 --rate 100 --latency 100"
+    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 5 --time-limit 20 --rate 10 --nemesis partition"
     commandLine("bash", "-c", cmd)
 }

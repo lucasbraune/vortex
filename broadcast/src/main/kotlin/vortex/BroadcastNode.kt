@@ -10,7 +10,10 @@ import vortex.protocol.Node
 
 @Serializable
 @SerialName("broadcast")
-data class Broadcast(val message: Int): MessagePayload
+data class Broadcast(
+    @SerialName("message")
+    val value: Int
+): MessagePayload
 
 @Serializable
 @SerialName("broadcast_ok")
@@ -45,7 +48,8 @@ val broadcastSerialModule = SerializersModule {
 
 class BroadcastNode : Node(broadcastSerialModule) {
 
-    private val messages = mutableListOf<Int>()
+    private val values = mutableListOf<Int>()
+    private lateinit var neighbors: List<String>
 
     init {
         registerHandler { message ->
@@ -53,26 +57,20 @@ class BroadcastNode : Node(broadcastSerialModule) {
             val messageId = message.messageId
             when (val payload = message.payload) {
                 is Broadcast -> {
-                    messages.add(payload.message)
-                    send(
-                        destination = source,
-                        payload = BroadcastOk,
-                        inReplyTo = messageId,
-                    )
+                    val value = payload.value
+                    if (!values.contains(value)) {
+                        values.add(value)
+                        neighbors.filter { it != source }
+                            .forEach { rpc(it, Broadcast(value)) {} }
+                    }
+                    send(BroadcastOk, destination = source, inReplyTo = messageId)
                 }
                 is Read -> {
-                    send(
-                        destination = source,
-                        payload = ReadOk(messages = messages),
-                        inReplyTo = messageId,
-                    )
+                    send(ReadOk(values), destination = source, inReplyTo = messageId)
                 }
                 is Topology -> {
-                    send(
-                        destination = source,
-                        payload = TopologyOk,
-                        inReplyTo = messageId,
-                    )
+                    neighbors = payload.topology[nodeId]!!
+                    send(TopologyOk, destination = source, inReplyTo = messageId)
                 }
             }
         }

@@ -60,6 +60,15 @@ class BroadcastNodeTest {
                     }
                 """.trimIndent(),
             ),
+            Arguments.of(
+                Broadcast(value = 1000),
+                """
+                    {
+                      "type": "broadcast",
+                      "message": 1000
+                    }
+                """.trimIndent()
+            )
         )
     }
 }

@@ -47,6 +47,24 @@ abstract class Node(serialModule: SerializersModule) {
     private val handlers: MutableList<(message: Message) -> Unit> =
         mutableListOf()
 
+    init {
+        registerHandler { message ->
+            val source = message.source
+            val messageId = message.messageId
+            when (val payload = message.payload) {
+                is Init -> {
+                    this.nodeId = payload.nodeId
+                    this.nodeIds = payload.nodeIds
+                    sendMessage(
+                        destination = message.source,
+                        payload = InitOk,
+                        inReplyTo = message.messageId,
+                    )
+                }
+            }
+        }
+    }
+
     fun serve() {
         while (true) {
             val line = readLine() ?: return // End of input

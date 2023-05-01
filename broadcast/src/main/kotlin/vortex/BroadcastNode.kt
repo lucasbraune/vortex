@@ -5,8 +5,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import vortex.protocol.Init
-import vortex.protocol.InitOk
 import vortex.protocol.MessagePayload
 import vortex.protocol.Node
 
@@ -54,15 +52,6 @@ class BroadcastNode : Node(broadcastSerialModule) {
             val source = message.source
             val messageId = message.messageId
             when (val payload = message.payload) {
-                is Init -> {
-                    this.nodeId = payload.nodeId
-                    this.nodeIds = payload.nodeIds
-                    sendMessage(
-                        destination = source,
-                        payload = InitOk,
-                        inReplyTo = messageId,
-                    )
-                }
                 is Broadcast -> {
                     messages.add(payload.message)
                     sendMessage(

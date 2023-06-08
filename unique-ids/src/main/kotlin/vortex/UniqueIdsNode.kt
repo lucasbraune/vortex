@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import vortex.protocol.MessagePayload
-import vortex.protocol.Node
+import vortex.protocol.v1.MessagePayload
+import vortex.protocol.v1.Node
 
 @Serializable
 @SerialName("generate")

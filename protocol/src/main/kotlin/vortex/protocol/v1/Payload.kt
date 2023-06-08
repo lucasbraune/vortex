@@ -1,4 +1,4 @@
-package vortex.protocol
+package vortex.protocol.v1
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

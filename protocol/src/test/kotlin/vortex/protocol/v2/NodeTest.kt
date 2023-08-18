@@ -1,4 +1,4 @@
-package vertex.protocol.v2
+package vortex.protocol.v2
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking

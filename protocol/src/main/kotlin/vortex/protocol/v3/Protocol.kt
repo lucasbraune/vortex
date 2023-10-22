@@ -70,7 +70,7 @@ class Protocol private constructor (
     }
 
     fun receiveMessage(): Message? =
-        readLine()?.let {
+        readlnOrNull()?.let {
             gson.fromJson(it, Message::class.java)
         }
 

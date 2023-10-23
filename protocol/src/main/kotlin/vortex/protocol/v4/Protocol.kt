@@ -4,7 +4,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.Serializable
@@ -27,7 +28,7 @@ data class Message(
     val body: JsonObject,
 )
 
-private val format = Json
+private val format = Json { ignoreUnknownKeys = true }
 
 fun send(message: Message): Unit = println(format.encodeToString(message))
 fun receiveMessage(): Message? = readlnOrNull()?.let { format.decodeFromString<Message>(it) }
@@ -40,11 +41,14 @@ class Server(
     private val handlerContext: CoroutineContext = Dispatchers.Default,
     private val handler: MessageHandler,
 ) {
-    private val deferredJob = CompletableDeferred<Job>()
+    private val deferredScope = CompletableDeferred<CoroutineScope>()
 
     fun start(ioContext: CoroutineContext = Dispatchers.IO) {
-        val job = CoroutineScope(ioContext).launch {
-            deferredJob.await()
+        val scope = CoroutineScope(ioContext)
+        if (!deferredScope.complete(scope)) {
+            throw IllegalStateException("Server is already running.")
+        }
+        scope.launch {
             runInterruptible {
                 while (true) {
                     val message = receiveMessage() ?: break
@@ -54,17 +58,13 @@ class Server(
                 }
             }
         }
-        if (!deferredJob.complete(job)) {
-            job.cancel()
-            throw IllegalStateException("Server was running.")
-        }
     }
 
-    fun shutdownNow() {
-        deferredJob.getCompleted().cancel()
+    fun shutdown() {
+        deferredScope.getCompleted().cancel()
     }
 
     suspend fun awaitTermination() {
-        deferredJob.getCompleted().join()
+        deferredScope.getCompleted().coroutineContext.job.join()
     }
 }

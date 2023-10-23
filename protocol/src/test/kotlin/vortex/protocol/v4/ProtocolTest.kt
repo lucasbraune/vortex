@@ -15,7 +15,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintStream
 import java.io.PrintWriter
-import java.util.Scanner
+import java.util.*
 
 @TestInstance(Lifecycle.PER_CLASS)
 class ProtocolTest {
@@ -75,9 +75,6 @@ class ProtocolTest {
 
         assertNull(actual)
     }
-
-
-
 
     companion object {
         val helloMessage = Message("n1", "c1", buildJsonObject { put("hello", "world") })

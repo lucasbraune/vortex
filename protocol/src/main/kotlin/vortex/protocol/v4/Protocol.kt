@@ -59,7 +59,6 @@ class Server(
                 }
             }
         }
-        runBlocking {  }
     }
 
     fun shutdown() {
@@ -68,5 +67,10 @@ class Server(
 
     suspend fun awaitTermination() {
         deferredScope.getCompleted().coroutineContext.job.join()
+    }
+
+    fun serve() {
+        start()
+        runBlocking { awaitTermination() }
     }
 }

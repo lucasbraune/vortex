@@ -45,11 +45,22 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
-tasks.register<Exec>("runMaelstrom") {
-    dependsOn(maelstromRuntime.buildDependencies)
-    dependsOn("installDist")
-    val maelstromBin = maelstromRuntime.singleFile.path
-    val nodeBin = "$buildDir/install/${project.name}/bin/${project.name}"
-    val cmd = "$maelstromBin test -w broadcast --bin $nodeBin --node-count 5 --time-limit 20 --rate 10 --nemesis partition"
-    commandLine("bash", "-c", cmd)
+enum class ChallengeOptions(val value: String) {
+    A("--node-count 1 --time-limit 20 --rate 10"),
+    B("--node-count 5 --time-limit 20 --rate 10"),
+    C("--node-count 5 --time-limit 20 --rate 10 --nemesis partition"),
+    D_AND_E("--node-count 25 --time-limit 20 --rate 100 --latency 100"),
+    D_NEMESIS("--node-count 25 --time-limit 20 --rate 100 --latency 100 --nemesis partition"),
+}
+
+ChallengeOptions.values().forEach {
+    tasks.register<Exec>("runMaelstrom#${it.name}") {
+        dependsOn(maelstromRuntime.buildDependencies)
+        dependsOn("installDist")
+        val maelstromBin = maelstromRuntime.singleFile.path
+        val nodeBin = "$buildDir/install/${project.name}/bin/${project.name}"
+        val opts = it.value
+        val cmd = "$maelstromBin test -w broadcast --bin $nodeBin $opts"
+        commandLine("bash", "-c", cmd)
+    }
 }

@@ -30,7 +30,7 @@ class BroadcastNodeTest {
     }
 
     companion object {
-        private val json = Json { serializersModule = broadcastSerialModule }
+        private val json = Json { serializersModule = BroadcastSerializers }
 
         @JvmStatic
         fun serializedPayloads() = listOf<Arguments>(

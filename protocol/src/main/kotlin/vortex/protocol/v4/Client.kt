@@ -34,7 +34,7 @@ class Client(
     }
 
     fun handle(src: String, responseBody: ResponseBody) {
-        responsesByMsgId.remove(responseBody.inReplyTo)
+        responsesByMsgId.remove(responseBody.inReplyTo) // possibly a response that timed out
             ?.complete(responseBody)
             ?: LOG.println("Unexpected response from $src: $responseBody")
     }

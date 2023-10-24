@@ -8,6 +8,8 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import vortex.protocol.v4.InitService
 import vortex.protocol.v4.MessageBody
+import vortex.protocol.v4.RequestBody
+import vortex.protocol.v4.ResponseBody
 import java.util.concurrent.atomic.AtomicInteger
 
 @Serializable
@@ -15,15 +17,15 @@ import java.util.concurrent.atomic.AtomicInteger
 class Generate(
     override val msgId: Int,
     override val inReplyTo: Int? = null,
-) : MessageBody
+) : RequestBody
 
 @Serializable
 @SerialName("generate_ok")
 data class GenerateOk(
     val id: Int,
-    override val inReplyTo: Int?,
+    override val inReplyTo: Int,
     override val msgId: Int? = null,
-): MessageBody
+): ResponseBody
 
 val UniqueIdsSerializers = SerializersModule {
     polymorphic(MessageBody::class) {
@@ -42,6 +44,7 @@ class UniqueIdsService(
     private val nodeIds: List<String> by lazy {
         initService.nodeIds.getCompleted()
     }
+
     private var generatedCount = AtomicInteger()
 
     fun handle(body: Generate) = GenerateOk(generateId(), body.msgId)

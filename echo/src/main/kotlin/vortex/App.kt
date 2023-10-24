@@ -1,6 +1,5 @@
 package vortex
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
@@ -10,15 +9,11 @@ import kotlinx.serialization.modules.subclass
 import vortex.protocol.v4.Init
 import vortex.protocol.v4.InitSerializers
 import vortex.protocol.v4.InitService
-import vortex.protocol.v4.Message
 import vortex.protocol.v4.MessageBody
 import vortex.protocol.v4.RequestBody
 import vortex.protocol.v4.ResponseBody
 import vortex.protocol.v4.Server
-import vortex.protocol.v4.decodeBody
-import vortex.protocol.v4.encodeBody
 import vortex.protocol.v4.messageBodyFormat
-import vortex.protocol.v4.send
 import java.util.*
 
 @Serializable
@@ -44,18 +39,14 @@ private val EchoSerializers = SerializersModule {
     }
 }
 
-fun main() = runBlocking {
+fun main() {
     val format = messageBodyFormat(InitSerializers + EchoSerializers)
     val initService = InitService()
-    Server {
-        val responseBody: ResponseBody = when (val requestBody = format.decodeBody(it.body)) {
-            is Init -> initService.handle(requestBody)
-            is Echo -> EchoOk(echo = requestBody.echo, inReplyTo = requestBody.msgId)
-            else -> throw InputMismatchException("Unexpected message body: ${it.body}")
+    Server(format) { _, _, body ->
+        when (body) {
+            is Init -> initService.handle(body)
+            is Echo -> EchoOk(echo = body.echo, inReplyTo = body.msgId)
+            else -> throw InputMismatchException("Unexpected message body: $body")
         }
-        send(Message(it.dest, it.src, format.encodeBody(responseBody)))
-    }.run {
-        start()
-        awaitTermination()
-    }
+    }.serve()
 }

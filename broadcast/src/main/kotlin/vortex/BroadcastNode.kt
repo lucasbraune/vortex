@@ -1,9 +1,9 @@
 package vortex
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -18,6 +18,7 @@ import vortex.protocol.v4.RequestBody
 import vortex.protocol.v4.ResponseBody
 import vortex.protocol.v4.RetryOptions
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.coroutines.EmptyCoroutineContext
 
 @Serializable
 @SerialName("broadcast")
@@ -80,7 +81,8 @@ val BroadcastSerializers = SerializersModule {
 class BroadcastService(
     private val initService: InitService,
     private val client: Client,
-) {
+): AutoCloseable {
+    private val workerScope = CoroutineScope(EmptyCoroutineContext)
     private val values: MutableList<Int> = CopyOnWriteArrayList()
     private val nodeId: String by lazy { initService.nodeId.getCompleted() }
     private val _neighborIds = CompletableDeferred<List<String>>()
@@ -89,16 +91,14 @@ class BroadcastService(
     suspend fun handle(body: Broadcast): BroadcastOk {
         if (!values.contains(body.value)) {
             values.add(body.value)
-            coroutineScope {
-                neighborIds.map {
-                    launch {
-                        client.rpc(
-                            it,
-                            Broadcast(body.value, client.nextMsgId),
-                            retryOptions = UNLIMITED_RETRIES
-                        )
-                    }
-                }.joinAll()
+            neighborIds.forEach {
+                workerScope.launch {
+                    client.rpc(
+                        it,
+                        Broadcast(body.value, client.nextMsgId),
+                        retryOptions = UNLIMITED_RETRIES
+                    )
+                }
             }
         }
         return BroadcastOk(inReplyTo = body.msgId)
@@ -121,5 +121,9 @@ class BroadcastService(
 
     companion object {
         val UNLIMITED_RETRIES = RetryOptions.Default.copy(times = Int.MAX_VALUE)
+    }
+
+    override fun close() {
+        workerScope.cancel()
     }
 }

@@ -14,18 +14,19 @@ fun main() {
     val format = messageBodyFormat(InitSerializers + BroadcastSerializers)
     val initService = InitService()
     val client = Client(initService, format)
-    val broadcastService = BroadcastService(initService, client)
-    Server(format) { src, _, body ->
-        when (body) {
-            is Init -> initService.handle(body)
-            is ResponseBody -> {
-                client.handle(src, body)
-                null
+    BroadcastService(initService, client).use { broadcastService ->
+        Server(format) { src, _, body ->
+            when (body) {
+                is Init -> initService.handle(body)
+                is ResponseBody -> {
+                    client.handle(src, body)
+                    null
+                }
+                is Read -> broadcastService.handle(body)
+                is Broadcast -> broadcastService.handle(body)
+                is Topology -> broadcastService.handle(body)
+                else -> throw InputMismatchException("Unexpected message body: $body")
             }
-            is Read -> broadcastService.handle(body)
-            is Broadcast -> broadcastService.handle(body)
-            is Topology -> broadcastService.handle(body)
-            else -> throw InputMismatchException("Unexpected message body: $body")
-        }
-    }.serve()
+        }.serve()
+    }
 }

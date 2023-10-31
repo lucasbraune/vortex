@@ -3,10 +3,8 @@ package vortex
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
@@ -18,8 +16,8 @@ import vortex.protocol.v4.LOG
 import vortex.protocol.v4.MessageBody
 import vortex.protocol.v4.RequestBody
 import vortex.protocol.v4.ResponseBody
+import vortex.protocol.v4.RetryOptions
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.time.Duration.Companion.milliseconds
 
 @Serializable
 @SerialName("broadcast")
@@ -94,11 +92,11 @@ class BroadcastService(
             coroutineScope {
                 neighborIds.map {
                     launch {
-                        retry {
-                            withTimeout(300.milliseconds) {
-                                client.rpc(it, Broadcast(body.value, client.nextMsgId))
-                            }
-                        }
+                        client.rpc(
+                            it,
+                            Broadcast(body.value, client.nextMsgId),
+                            retryOptions = UNLIMITED_RETRIES
+                        )
                     }
                 }.joinAll()
             }
@@ -122,24 +120,6 @@ class BroadcastService(
     }
 
     companion object {
-        suspend fun <T> retry(
-            times: Int = Int.MAX_VALUE,
-            initialDelay: Long = 100, // 0.1 second
-            maxDelay: Long = 1000,    // 1 second
-            factor: Double = 2.0,
-            block: suspend () -> T): T
-        {
-            var currentDelay = initialDelay
-            repeat(times - 1) {
-                try {
-                    return block()
-                } catch (e: Exception) {
-                    LOG.println("Retrying operation after ${it + 1} attempts. Cause: ${e.message}")
-                }
-                delay(currentDelay)
-                currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
-            }
-            return block() // last attempt
-        }
+        val UNLIMITED_RETRIES = RetryOptions.Default.copy(times = Int.MAX_VALUE)
     }
 }
